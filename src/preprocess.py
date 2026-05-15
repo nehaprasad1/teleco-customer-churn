@@ -81,3 +81,25 @@ def split_features_target(df: pd.DataFrame):
     X = df.drop(columns=["Churn_Value"])
     y = df["Churn_Value"]
     return X, y
+if __name__ == "__main__":
+    import os
+
+    # 1. Define paths (Matching your dvc.yaml)
+    input_path = "data/raw/Telco_customer_churn.csv"
+    output_path = "data/processed/churn_predictions.csv"
+
+    # 2. Ensure output directory exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    # 3. Execute the pipeline
+    print(f"Loading data from {input_path}...")
+    raw_data = load_data(input_path)
+
+    print("Preprocessing data...")
+    processed_data = preprocess_data(raw_data)
+
+    # 4. Save the result (This satisfies DVC!)
+    print(f"Saving processed data to {output_path}...")
+    processed_data.to_csv(output_path, index=False)
+    
+    print("Preprocessing complete!")

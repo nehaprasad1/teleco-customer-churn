@@ -1,0 +1,28 @@
+
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+      - src/preprocess.py
+      - data/raw/Telco_customer_churn.csv
+    outs:
+      - data/processed/churn_predictions.csv
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      
+      - data/processed/churn_predictions.csv 
+    outs:
+      - models/churn_xgb_model.pkl
+
+  predict:
+    cmd: python src/predict.py
+    deps:
+      - src/predict.py
+      - models/churn_xgb_model.pkl
+      - data/processed/churn_predictions.csv
+    metrics:
+      - reports/metrics.json:
+          cache: false

@@ -6,3 +6,4 @@ data/raw/Telco_customer_churn.csv
 models/churn_xgb_model.pkl
 .ipynb_checkpoints/
 *.json
+data/processed/

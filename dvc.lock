@@ -1,0 +1,54 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+    - path: data/raw/Telco_customer_churn.csv
+      hash: md5
+      md5: f76bc0be503b249e4ba0f50c2206d043
+      size: 1743023
+    - path: src/preprocess.py
+      hash: md5
+      md5: 41f83f947400e4963c43c6c136853bef
+      size: 3064
+    outs:
+    - path: data/processed/churn_predictions.csv
+      hash: md5
+      md5: cc32fc9a8b89b3920f44299c559a3c7d
+      size: 705916
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/processed/churn_predictions.csv
+      hash: md5
+      md5: cc32fc9a8b89b3920f44299c559a3c7d
+      size: 705916
+    - path: src/train.py
+      hash: md5
+      md5: aea54aa00bd4583be1d59b1bf1ab16c3
+      size: 2663
+    outs:
+    - path: models/churn_xgb_model.pkl
+      hash: md5
+      md5: 315dbfddc57d953175509d15f1809154
+      size: 103413
+  predict:
+    cmd: python src/predict.py
+    deps:
+    - path: data/processed/churn_predictions.csv
+      hash: md5
+      md5: cc32fc9a8b89b3920f44299c559a3c7d
+      size: 705916
+    - path: models/churn_xgb_model.pkl
+      hash: md5
+      md5: 315dbfddc57d953175509d15f1809154
+      size: 103413
+    - path: src/predict.py
+      hash: md5
+      md5: 5de3d267e064f7a6c5c9315582a2fb8a
+      size: 2697
+    outs:
+    - path: reports/metrics.json
+      hash: md5
+      md5: f282b1d1a409b393b8b77f7778bbb317
+      size: 35

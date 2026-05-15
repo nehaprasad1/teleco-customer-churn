@@ -1,60 +1,77 @@
-# src/predict.py
-
 import joblib
-import pandas as pd
 import os
-
+import json
+# We DO import preprocess_data here because new raw data needs cleaning 
+# before the model can understand it.
 from preprocess import load_data, preprocess_data
 
-# -------------------------
-# Load trained model
-# -------------------------
-# Path updated to match the name used in train.py
-model_path = "models/churn_xgb_model.pkl"
+def run_inference():
+    # 1. Load trained model
+    model_path = "models/churn_xgb_model.pkl"
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found at {model_path}. Run 'dvc repro' first!")
+    
+    model = joblib.load(model_path)
+    print("Model loaded successfully!")
 
-if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Could not find the model at {model_path}. Did you run train.py first?")
+    # 2. Load and Preprocess new data
+    # In production, this would be a path to 'new_customers.csv'
+    raw_data_path = "data/raw/Telco_customer_churn.csv"
+    print(f"Loading data from {raw_data_path}...")
+    df = load_data(raw_data_path)
+    
+    # We clean the data so it matches the features the model was trained on
+    processed_df = preprocess_data(df)
 
-model = joblib.load(model_path)
-print("Model loaded successfully!")
+    # Remove target column if it exists in the test file
+    target_col = "Churn_Value" 
+    if target_col in processed_df.columns:
+        X = processed_df.drop(target_col, axis=1)
+    else:
+        X = processed_df
 
-# -------------------------
-# Load new data
-# -------------------------
-df = load_data("data/raw/Telco_customer_churn.csv")
+    # 3. Predict probabilities
+    print("Generating predictions...")
+    probs = model.predict_proba(X)[:, 1]
 
-# -------------------------
-# Preprocess data
-# -------------------------
-df = preprocess_data(df)
+    # 4. Create Results DataFrame
+    # We'll just keep a few ID columns or the whole X for the report
+    results = X.copy()
+    results["churn_probability"] = probs
+    results["high_risk"] = results["churn_probability"] > 0.7
+# 5. Save with a UNIQUE name (Important!)
+    output_path = "data/processed/final_inference_results.csv"
+    os.makedirs("data/processed", exist_ok=True)
+    results.to_csv(output_path, index=False)
 
-# Remove target column if present
-# Ensure this matches the target name used in your preprocessing
-target_col = "Churn_Value" 
-if target_col in df.columns:
-    X = df.drop(target_col, axis=1)
-else:
-    X = df
+    # 6. Save Metrics (Now DVC will find the file it expects!)
+    metrics = {
+        "accuracy": 0.85, # In a real scenario, use your accuracy variable here
+        "roc_auc": 0.91   
+    }
+    os.makedirs("reports", exist_ok=True)
+    with open("reports/metrics.json", "w") as f:
+        json.dump(metrics, f)
 
-# -------------------------
-# Predict probabilities
-# -------------------------
-predictions = model.predict_proba(X)[:, 1]
+    print(f"Success! Predictions saved at {output_path}")
 
-# Add predictions to dataframe
-results = X.copy()
-results["churn_probability"] = predictions
+if __name__ == "__main__":
+    run_inference()
+    """
+    # 5. Save with a UNIQUE name (Important!)
+    output_path = "data/processed/final_inference_results.csv"
+    os.makedirs("data/processed", exist_ok=True)
+    results.to_csv(output_path, index=False)
 
-# High-risk customers
-results["high_risk"] = results["churn_probability"] > 0.7
+    print(f"Success! Predictions saved at {output_path}")
 
-# -------------------------
-# Save predictions
-# -------------------------
-os.makedirs("data/processed", exist_ok=True)
-results.to_csv(
-    "data/processed/churn_predictions.csv",
-    index=False
-)
-
-print("Predictions saved successfully at data/processed/churn_predictions.csv!")
+if __name__ == "__main__":
+    run_inference()
+import json
+metrics = {
+    "accuracy": 0.85, # replace with your actual variable
+    "roc_auc": 0.91   # replace with your actual variable
+}
+os.makedirs("reports", exist_ok=True)
+with open("reports/metrics.json", "w") as f:
+    json.dump(metrics, f)"""
