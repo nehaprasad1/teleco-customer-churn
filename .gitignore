@@ -7,3 +7,18 @@ models/churn_xgb_model.pkl
 .ipynb_checkpoints/
 *.json
 data/processed/
+tempCodeRunnerFile.py
+# VS Code / Code Runner temp files
+tempCodeRunnerFile.py
+.vscode/
+
+# Python Virtual Environment
+venv/
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS-specific files
+.DS_Store
+Thumbs.db
